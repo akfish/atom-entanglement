@@ -1,0 +1,107 @@
+// The ui-variables file is provided by base themes provided by Atom.
+//
+// See https://github.com/atom/atom-dark-ui/blob/master/styles/ui-variables.less
+// for a full listing of what's available.
+@import "ui-variables";
+
+@qr-size: 128px;
+
+.atom-entanglement-detail {
+  top: initial !important;
+  left: initial !important;
+  bottom: @component-line-height;
+  right: 0;
+
+  .detail-view {
+    h2 {
+      margin-top: 0;
+    }
+    .header {
+      h1 {
+        float: left;
+        line-height: @component-line-height;
+        vertical-align: middle;
+      }
+      button {
+        float: right;
+        &:before {
+          margin-right: 0;
+        }
+      }
+    }
+    .discovery {
+      clear: both;
+      padding-top: @component-padding;
+      border-top: 1px solid @overlay-border-color;
+      .qr {
+        padding: @component-padding;
+        width: @qr-size + @component-padding * 2;
+        height: @qr-size + @component-padding * 2;
+        background: white;
+        border-radius: @component-border-radius;//0.5em;
+        float: left;
+        margin-right: @component-padding;
+      }
+      .info {
+        min-height: @qr-size + @component-padding * 2;
+        .get-url {
+          line-height: @component-line-height;
+          vertical-align: middle;
+          .span-message {
+            float: left;
+            opacity: 1;
+            & .hidden {
+              opacity: 0;
+            }
+          }
+          .span-scan, .btn-copy {
+            float: right;
+          }
+          .span-scan {
+            margin-right: @component-padding;
+          }
+          .btn-copy {
+            margin-right: 0;
+          }
+        }
+        margin-bottom: @component-padding;
+      }
+    }
+
+    .footer {
+      padding-top: @component-padding;
+      border-top: 1px solid @overlay-border-color;
+      clear: both;
+      .service-state {
+        line-height: @component-line-height;
+        vertical-align: middle;
+      }
+      .badge {
+        float: right;
+        margin-left: @component-padding;
+      }
+    }
+  }
+}
+.atom-entanglement-status {
+  position: relative;
+  display: inline-block;
+  margin-left: 10px;
+  cursor: pointer;
+
+  .wave, .atom, .device {
+    display: inline-block;
+  }
+
+  .icon {
+    vertical-align: middle;
+    line-height: @component-line-height;
+    font-size: 16px;
+  }
+  .wave {
+    position: relative;
+    height: @component-line-height;
+    vertical-align: middle;
+    width: 64px;
+  }
+}
