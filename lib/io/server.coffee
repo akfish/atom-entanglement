@@ -26,12 +26,19 @@ if require.main == module
       primary: '/device'
       allowed: ['/device', '/rpc', '/log']
 
+  crypto = require 'crypto'
+  genToken = (type, id, t, secret = "akfish") ->
+    # TODO: make sever-side secret configurable
+    checksum = crypto.createHash('sha1')
+    checksum.update("#{type}:#{id}@#{t}-#{secret}")
+    checksum.digest('hex')
   epReg = {}
 
   accessControl = (ns) ->
     (socket, next) ->
       console.log "AC #{socket.id}"
-      access_token = socket.handshake.query.access_token
+      query = socket.handshake.query
+      access_token = query.access_token
       if not access_token?
         console.log "No access_token"
         return next(new Error("Access token is not provided"))
@@ -39,13 +46,20 @@ if require.main == module
         console.log "Invalid access_token"
         return next(new Error("Access token is not valid"))
 
-      # TODO: validate token against socket.id
-      type = epReg[access_token]
-      ac = epAC[type]
+      permission = epReg[access_token]
+      ac = epAC[permission.type]
+      console.log permission
+      console.log ac
+      # TODO: validate token against parent socket.id
+      actual_token = genToken(permission.type, query.parent, permission.t)
+      if actual_token != access_token
+        console.log "Invalid access_token: token does not match the socket"
+        console.log "Expect: #{access_token}, Actual: #{actual_token}"
+        return next(new Error("Access token is not valid: token does not match the socket"))
 
       if ns not in ac.allowed
-        console.log "Endpoint '#{type}' is not allowed to access #{ns}"
-        return next(new Error("Endpoint '#{type}' is not allowed to access #{ns}"))
+        console.log "Endpoint '#{permission.type}' is not allowed to access #{ns}"
+        return next(new Error("Endpoint '#{permission.type}' is not allowed to access #{ns}"))
 
       next()
 
@@ -53,11 +67,6 @@ if require.main == module
 
 
 
-  crypto = require 'crypto'
-  genToken = (type, id) ->
-    checksum = crypto.createHash('sha1')
-    checksum.update("#{type}:#{id}@#{new Date().getTime()}")
-    checksum.digest('hex')
 
   sio.on "connection", (socket) ->
     console.log "Socket #{socket.id} connected"
@@ -70,9 +79,11 @@ if require.main == module
         return cb(new Error("Unknown endpoint type: #{ep.type}"))
 
       # TODO: store token timestamp for validation
-      token = genToken ep.type, socket.id
-      epReg[token] = ep.type
-
+      t = new Date().getTime()
+      token = genToken ep.type, socket.id, t
+      epReg[token] =
+        type: ep.type
+        t: t
 
       cb null, access: ac, token: token
 
@@ -121,7 +132,7 @@ module.exports =
     io.on "connect_error", notRunning
 
   watch: (opts) ->
-    io = require('socket.io-client')("http://localhost:#{opts.port}/")
+    io = require('socket.io-client')("http://localhost:#{opts.port}/", forceNew: true)
 
     child = null
     killer = -1
