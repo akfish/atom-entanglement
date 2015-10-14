@@ -1,6 +1,7 @@
 StatusBarView = require './views/status-bar'
 {CompositeDisposable} = require 'atom'
 Settings = require './settings'
+Server = require './io/server'
 
 module.exports = AtomEntanglement =
   config: Settings.config
@@ -16,6 +17,10 @@ module.exports = AtomEntanglement =
     # Register command that toggles this view
     @subscriptions.add atom.commands.add 'atom-workspace', 'atom-entanglement:toggle status': => @statusBarView.toggleDetailView()
 
+    serverOpts =
+      port: Settings.port()
+    Server.watch serverOpts
+    
   deactivate: ->
     @subscriptions.dispose()
     @statusBarView.destroy()
