@@ -10,7 +10,7 @@ if require.main == module
   rpc_io =    sio.of '/rpc'       # rpc channel
 
   # 0. Namespace / is for watch dogs
-  # 1. Atoms/devices must first complete registery on their regarding ns.
+  # 1. Atoms/devices must first complete registery on /.
   #    Each ns should do auth as configured. Server will hold their socket.id
   #    as authentication token.
   # 2. Then they can connect to `/rpc` channel and request endpoint list.
@@ -18,9 +18,30 @@ if require.main == module
   # 4. Atoms can control server on `/atom` channel
   # 5. They can perform RPC over `/rpc` channel
 
+  epAC =
+    atom:
+      primary: '/atom'
+      allowed: ['/atom', '/rpc', '/log']
+    device:
+      primary: '/device'
+      allowed: ['/device', '/rpc', '/log']
+
+  epReg = {}
 
   sio.on "connection", (socket) ->
     console.log "Socket #{socket.id} connected"
+    socket.on "register", (ep, cb) ->
+      console.log "Registering #{socket.id}"
+      console.log ep
+      ac = epAC[ep.type]
+      if not ac?
+        return cb(new Error("Unknown endpoint type: #{ep.type}"))
+
+      epReg[socket.id] = ep.type
+
+      cb null, ac
+
+
     socket.on "disconnect", ->
       console.log "Socket #{socket.id} disconnected"
 
