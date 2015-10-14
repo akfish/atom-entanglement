@@ -28,18 +28,53 @@ if require.main == module
 
   epReg = {}
 
+  accessControl = (ns) ->
+    (socket, next) ->
+      console.log "AC #{socket.id}"
+      access_token = socket.handshake.query.access_token
+      if not access_token?
+        console.log "No access_token"
+        return next(new Error("Access token is not provided"))
+      if not epReg[access_token]?
+        console.log "Invalid access_token"
+        return next(new Error("Access token is not valid"))
+
+      # TODO: validate token against socket.id
+      type = epReg[access_token]
+      ac = epAC[type]
+
+      if ns not in ac.allowed
+        console.log "Endpoint '#{type}' is not allowed to access #{ns}"
+        return next(new Error("Endpoint '#{type}' is not allowed to access #{ns}"))
+
+      next()
+
+  atom_io.use accessControl('/atom')
+
+
+
+  crypto = require 'crypto'
+  genToken = (type, id) ->
+    checksum = crypto.createHash('sha1')
+    checksum.update("#{type}:#{id}@#{new Date().getTime()}")
+    checksum.digest('hex')
+
   sio.on "connection", (socket) ->
     console.log "Socket #{socket.id} connected"
     socket.on "register", (ep, cb) ->
+      # TODO: only allow localhost to register as atom
       console.log "Registering #{socket.id}"
       console.log ep
       ac = epAC[ep.type]
       if not ac?
         return cb(new Error("Unknown endpoint type: #{ep.type}"))
 
-      epReg[socket.id] = ep.type
+      # TODO: store token timestamp for validation
+      token = genToken ep.type, socket.id
+      epReg[token] = ep.type
 
-      cb null, ac
+
+      cb null, access: ac, token: token
 
 
     socket.on "disconnect", ->
@@ -75,7 +110,7 @@ prepareServerProcessArgv = (opts) ->
 
 module.exports =
   isRunning: (opts, cb) ->
-    io = require('socket.io-client').connect("http://localhost:#{opts.port}/")
+    io = require('socket.io-client')("http://localhost:#{opts.port}/")
     notRunning = (reason) ->
       io.disconnect()
       cb new Error("Server is not running. Reason: #{reason}")
@@ -86,7 +121,7 @@ module.exports =
     io.on "connect_error", notRunning
 
   watch: (opts) ->
-    io = require('socket.io-client').connect("http://localhost:#{opts.port}/")
+    io = require('socket.io-client')("http://localhost:#{opts.port}/")
 
     child = null
     killer = -1

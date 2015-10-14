@@ -2,7 +2,7 @@ IO = require('socket.io-client')
 module.exports =
 class Endpoint
   constructor: (@url, @type) ->
-    @io = IO.connect(@url)
+    @io = IO(@url)
 
     @io.on "connect", @onConnect.bind(@)
     @io.on "error", @onError.bind(@)
@@ -27,3 +27,11 @@ class Endpoint
         return
       console.log "Endpoint accepted by server"
       console.log ac
+
+      console.log "Try connect to /atom"
+      atom_io = IO "#{@url}atom", {forceNew: true, query: "access_token=#{ac.token}"}
+
+      atom_io.on "connect", => console.log "Connected to /atom as #{@type}"
+      atom_io.on "error", (err) ->
+        # TODO: re-register is token is not valid
+        console.log err
