@@ -2,6 +2,7 @@ StatusBarView = require './views/status-bar'
 {CompositeDisposable} = require 'atom'
 Settings = require './settings'
 Server = require './io/server'
+Endpoint = require './io/endpoint'
 
 module.exports = AtomEntanglement =
   config: Settings.config
@@ -20,7 +21,11 @@ module.exports = AtomEntanglement =
     serverOpts =
       port: Settings.port()
     Server.watch serverOpts
-    
+    url = "http://localhost:#{serverOpts.port}/"
+    atomEp = new Endpoint(url, 'atom')
+    deviceEp = new Endpoint(url, 'device')
+    # unknownEp = new Endpoint(url, 'miao')
+
   deactivate: ->
     @subscriptions.dispose()
     @statusBarView.destroy()

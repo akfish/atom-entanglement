@@ -168,10 +168,10 @@ module.exports =
       console.log "Disconnected from server"
       tryRun()
 
-    io.on "error", (err) ->
-      console.log "Error: "
-      console.log err
-      tryRun()
+    # io.on "error", (err) ->
+    #   console.log "Error: "
+    #   console.log err
+    #   tryRun()
 
     io.on "connect_error", (err) ->
       console.log "Connection error"

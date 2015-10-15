@@ -22,6 +22,9 @@ class Endpoint
     console.log "Registering as #{@type}"
     id = @io.id
     @io.emit "register", type: @type, (err, ac) =>
+      # TODO: ac should contain an unique ID
+      #       such ID will be sent if available
+      #       in case of losing connection
       if err?
         console.log "Endpoint refused by server: #{id}"
         console.log err
@@ -29,16 +32,18 @@ class Endpoint
       console.log "Endpoint accepted by server #{id}"
       console.log ac
 
-      console.log "Try connect to /atom #{id}"
-      atom_io = IO "#{@url}atom", {forceNew: true, query: "access_token=#{ac.token}&parent=#{id}"}
+      @atom_io?.disconnect()
 
-      atom_io.on "connect", => console.log "Connected to /atom as #{@type}"
+      console.log "Try connect to /atom #{id}"
+      @atom_io = atom_io = IO "#{@url}atom", {forceNew: true, query: "access_token=#{ac.token}&parent=#{id}"}
+
+      atom_io.on "connect", => console.log "Connected to /atom as #{@type}:#{id}"
       atom_io.on "error", (err) =>
         # TODO: re-register is token is not valid
         console.log "#{err} #{id}"
         atom_io.disconnect()
         if /^Access token is not valid/.test err
-          console.log "Retry"
+          console.log "Re-register"
           # @register()
 
   of: (namespace) ->
