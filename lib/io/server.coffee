@@ -3,6 +3,7 @@ if require.main == module
   app = require('express')()
   server = require('http').Server(app)
   sio = require('socket.io')(server)
+  Logger = require('./logger')
 
   atom_io =   sio.of '/atom'      # atom registery
   device_io = sio.of '/device'    # device registery
@@ -17,6 +18,8 @@ if require.main == module
   # 3. They can connect to `/log` channel to read and write logs
   # 4. Atoms can control server on `/atom` channel
   # 5. They can perform RPC over `/rpc` channel
+
+  logger = new Logger(log_io)
 
   epAC =
     atom:
@@ -36,44 +39,43 @@ if require.main == module
 
   accessControl = (ns) ->
     (socket, next) ->
-      console.log "AC #{socket.id}"
+      logger.log "AC #{socket.id}"
       query = socket.handshake.query
       access_token = query.access_token
       if not access_token?
-        console.log "No access_token"
+        logger.log "No access_token"
         return next(new Error("Access token is not provided"))
       if not epReg[access_token]?
-        console.log "Invalid access_token"
+        logger.log "Invalid access_token"
         return next(new Error("Access token is not valid"))
 
       permission = epReg[access_token]
       ac = epAC[permission.type]
-      console.log permission
-      console.log ac
+      logger.log permission
+      logger.log ac
       # TODO: validate token against parent socket.id
       actual_token = genToken(permission.type, query.parent, permission.t)
       if actual_token != access_token
-        console.log "Invalid access_token: token does not match the socket"
-        console.log "Expect: #{access_token}, Actual: #{actual_token}"
+        logger.log "Invalid access_token: token does not match the socket"
+        logger.log "Expect: #{access_token}, Actual: #{actual_token}"
         return next(new Error("Access token is not valid: token does not match the socket"))
 
       if ns not in ac.allowed
-        console.log "Endpoint '#{permission.type}' is not allowed to access #{ns}"
+        logger.log "Endpoint '#{permission.type}' is not allowed to access #{ns}"
         return next(new Error("Endpoint '#{permission.type}' is not allowed to access #{ns}"))
 
       next()
 
   atom_io.use accessControl('/atom')
 
-
-
+  log_io.use accessControl('/log')
 
   sio.on "connection", (socket) ->
-    console.log "Socket #{socket.id} connected"
+    logger.log "Socket #{socket.id} connected"
     socket.on "register", (ep, cb) ->
       # TODO: only allow localhost to register as atom
-      console.log "Registering #{socket.id}"
-      console.log ep
+      logger.log "Registering #{socket.id}"
+      logger.log ep
       ac = epAC[ep.type]
       if not ac?
         return cb(new Error("Unknown endpoint type: #{ep.type}"))
@@ -89,22 +91,22 @@ if require.main == module
 
 
     socket.on "disconnect", ->
-      console.log "Socket #{socket.id} disconnected"
+      logger.log "Socket #{socket.id} disconnected"
 
   sio.on "error", (err) ->
-    console.log err
+    logger.log err
 
   start = (port) ->
-    console.log "Server started: #{port}"
+    logger.log "Server started: #{port}"
     server.listen parseInt(port)
 
   main = (opts) ->
-    console.log "Process started: #{process.pid}"
+    logger.log "Process started: #{process.pid}"
     start opts.port
 
-  console.log process.argv
+  logger.log process.argv
   opts = require('minimist')(process.argv.slice(2))
-  console.log opts
+  logger.log opts
   main(opts)
 
 prepareServerProcessArgv = (opts) ->

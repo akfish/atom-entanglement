@@ -1,4 +1,7 @@
 IO = require('socket.io-client')
+Logger = require('./logger')
+
+
 module.exports =
 class Endpoint
   constructor: (@url, @type) ->
@@ -33,7 +36,6 @@ class Endpoint
       console.log ac
 
       @atom_io?.disconnect()
-
       console.log "Try connect to /atom #{id}"
       @atom_io = atom_io = IO "#{@url}atom", {forceNew: true, query: "access_token=#{ac.token}&parent=#{id}"}
 
@@ -45,5 +47,17 @@ class Endpoint
         if /^Access token is not valid/.test err
           console.log "Re-register"
           # @register()
+
+      @log_io?.disconnect()
+      console.log "Try connect to /log #{id}"
+      @log_io = atom_io = IO "#{@url}log", {forceNew: true, query: "access_token=#{ac.token}&parent=#{id}"}
+
+      @log_io.on "connect", =>
+        console.log "Connected to /log as #{@type}:#{id}"
+        @logger = new Logger.Remote(@log_io)
+      @log_io.on "error", (err) =>
+        # TODO: re-register is token is not valid
+        console.log "#{err} #{id}"
+        @log_io.disconnect()
 
   of: (namespace) ->

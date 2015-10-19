@@ -11,9 +11,23 @@ settings =
       enum: ['None', 'One click']
       title: "Authorization method"
       description: "Method used for device authentication and authorization"
+    showLog:
+      type: 'boolean'
+      default: true
+      title: 'Show log messages'
+      description: "Show all messages on `/log` channel in dev tools (for debugging)"
+
+title = (s) ->
+  s[0].toUpperCase() + s.substr(1)
 
 Object.keys(settings.config).forEach (k) ->
+  keyPath = 'atom-entanglement.' + k
   settings[k] = ->
-    atom.config.get('atom-entanglement.'+k)
+    atom.config.get(keyPath)
+
+  titled = title(k)
+
+  settings["observe#{titled}"] = (cb) ->
+    atom.config.observe keyPath, cb
 
 module.exports = settings
