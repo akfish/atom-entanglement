@@ -38,14 +38,14 @@ Verb       | Type         | Description
 `REDIRECT` | HTTP         |
 `CONNECT`  | socket.io    | `io.connect(url)`
 `EMIT`     | socket.io    | `socket.emit(evt, payload)`
-`TO'       | socket.io    | `socket.to(room).emit(evt, payload)`
+`TO`       | socket.io    | `socket.to(room).emit(evt, payload)`
 `ON`       | socket.io    | `socket.on(evt, handler)`
 
 ### Typing
 
 All variables are typed in the following convention:
 
-```
+```coffee
 identifier: Type
 ```
 
@@ -61,7 +61,7 @@ For user's convenience, atom-entanglement generates a QR code of the service dis
 
 ### Action: Discovery atom-entanglement server
 
-```
+```coffee
 GET http://catx.me/miao/
 ```
 
@@ -70,7 +70,7 @@ GET http://catx.me/miao/
 See [Miao/References/Options](https://github.com/akfish/miao#options)
 
 #### Response
-```
+```coffee
 REDIRECT RESOLVED_HOST
 ```
 
@@ -142,7 +142,7 @@ Role     | Allowed namespace          | Note
 
 ### Action: Declare an endpoint
 
-```
+```coffee
 CONNECT /
 EMIT    'register', id: ID, cb: PERMISSION_CB
 ```
@@ -174,7 +174,7 @@ Field   | Type      | Description
 
 ### Action: Refresh token
 
-```
+```coffee
 CONNECT /
 EMIT    'refresh', tokens: Tokens, cb: REFRESH_CB
 ```
@@ -197,7 +197,7 @@ Value  | Description
 
 ### Action: List connected endpoints
 
-```
+```coffee
 CONNECT /
 EMIT    'list', cb: LIST_CB
 ```
@@ -221,19 +221,19 @@ Field      | Type      | Description
 
 Fired when a new nendpoint is connected.
 
-```
+```coffee
 ON 'new_endpoint', endpoint: EndPoint
 ```
 
 ### Action: Connect to a channel
 
-```
+```coffee
 CONNECT /ns?token=access_token
 ```
 
 #### Event: `error`
 
-```
+```coffee
 ON 'error', error: Error
 ```
 
@@ -250,19 +250,19 @@ Message              | Description
 
 All authenticated endpoints can send and receive log messages via `/log` channel.
 
-```
+```coffee
 CONNECT /log
 ```
 
 ### Action: Write a log entry
 
-```
+```coffee
 EMIT 'log', type: LogTypeEnum, args: Array
 ```
 
 #### `LogTypeEnum: enum<string>`
 
-```
+```coffee
 TypeEnum = 'debug' | 'info' | 'log' | 'warn' | 'error'
 ```
 
@@ -270,7 +270,7 @@ TypeEnum = 'debug' | 'info' | 'log' | 'warn' | 'error'
 
 Fired when a log entry is received.
 
-```
+```coffee
 ON 'log', entry: LogEntry
 ```
 
@@ -288,7 +288,7 @@ Field    | Type            | Description
 
 Fired to a socket when it is connected. Send all history log entries up-to a pre-configured count.
 
-```
+```coffee
 ON 'history', entries: Array<LogEntry>
 ```
 
@@ -298,13 +298,13 @@ An endpoint can hold references to other remote endpoints and invoke their metho
 
 All RPC logic like remote module/method discovery and the actual calls are implemented as IO operations on the `/rpc` channel.
 
-```
+```coffee
 CONNECT /rpc
 ```
 
 All actions should be performed on one endpoints identified by its socket id.
 
-```
+```coffee
 TO target_id: string
 ```
 
@@ -312,7 +312,7 @@ To simplify things, all modules should be singletons (that is, having exactly on
 
 ### Action: List modules
 
-```
+```coffee
 EMIT 'list_modules', cb: MODULE_CB
 ```
 #### `MODULE_CB(err: string, modules: Array<string>): function<void>`
@@ -329,7 +329,7 @@ A list of names of exported modules on the remote endpoint.
 
 ### Action: Require modules
 
-```
+```coffee
 EMIT 'require', moduleName: string, cb: REQUIRE_CB
 ```
 
@@ -348,7 +348,7 @@ A list of names of the remote module's methods.
 
 ### Action: Call method
 
-```
+```coffee
 EMIT 'call', moduleName: string, methodName: string, args: Array<object>, cb: RPC_CB
 ```
 
